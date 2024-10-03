@@ -4,21 +4,23 @@ const { Storage } = require("@google-cloud/storage");
 const shortUUID = require("short-uuid");
 const sharp = require("sharp");
 
+const GCP_SERVICE_ACCOUNT_KEY_PATH = "/etc/secrets/vaulted-bonsai-437410-h8-0cc8128f5454.json";
+console.log(GCP_SERVICE_ACCOUNT_KEY_PATH);
 const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID;
 const GCP_BUCKET_NAME = process.env.GCP_BUCKET_NAME;
-const GCP_SERVICE_ACCOUNT_KEY = process.env.GCP_SERVICE_ACCOUNT_KEY;
+
+
 
 const router = express.Router();
 
-
-
-const serviceAccountKey = JSON.parse(GCP_SERVICE_ACCOUNT_KEY);
-
 const storage = new Storage({
   projectId: GCP_PROJECT_ID,
-  credentials: serviceAccountKey,
+  keyFilename: GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
-
+// const storage = new Storage({
+//   projectId: JSON.parse(process.env.GCP_FILE_KEYS).project_id,
+//   credentials: JSON.parse(process.env.GCP_FILE_KEYS) // Parse the JSON string into an object
+// });
 const bucketName = GCP_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
@@ -40,14 +42,19 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
     const uuid = translator.new();
 
     const filenameParts = req.file.originalname.split(".");
-    const newFilename = `${filenameParts[0]}-${uuid}.${filenameParts[1] || "png"}`;
-    const compressedFilename = `${filenameParts[0]}-${uuid}-compressed.${filenameParts[1] || "png"}`;
+    const newFilename = `${filenameParts[0]}-${uuid}.${
+      filenameParts[1] || "png"
+    }`;
+    const compressedFilename = `${filenameParts[0]}-${uuid}-compressed.${
+      filenameParts[1] || "png"
+    }`;
 
     // First, save the original image
     const originalBlob = bucket.file(newFilename);
     const originalBlobStream = originalBlob.createWriteStream();
 
     originalBlobStream.on("error", (err) => {
+      console.log(err);
       res.status(500).send(err);
     });
 
@@ -62,6 +69,7 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
       const compressedBlobStream = compressedBlob.createWriteStream();
 
       compressedBlobStream.on("error", (err) => {
+        console.log(err);
         res.status(500).send(err);
       });
 
@@ -78,8 +86,8 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
 
     originalBlobStream.end(req.file.buffer);
   } catch (error) {
+    console.log(error.message);
     res.status(500).send(error.message);
   }
 });
-
 module.exports = router;
