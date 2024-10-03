@@ -4,22 +4,16 @@ const { Storage } = require("@google-cloud/storage");
 const shortUUID = require("short-uuid");
 const sharp = require("sharp");
 
-//const GCP_SERVICE_ACCOUNT_KEY_PATH = require("../../vaulted-bonsai-437410-h8-0cc8128f5454.json");
-// console.log(GCP_SERVICE_ACCOUNT_KEY_PATH);
+const GCP_SERVICE_ACCOUNT_KEY_PATH = process.env.GCP_SERVICE_ACCOUNT_KEY_PATH;
 const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID;
 const GCP_BUCKET_NAME = process.env.GCP_BUCKET_NAME;
-
 
 const router = express.Router();
 
 const storage = new Storage({
-  projectId: JSON.parse(process.env.GCP_FILE_KEYS).project_id,
-  credentials: {
-    client_email: JSON.parse(process.env.GCP_FILE_KEYS).client_email,
-    private_key: JSON.parse(process.env.GCP_FILE_KEYS).private_key,
-  },
+  projectId: GCP_PROJECT_ID,
+  keyFilename: GCP_SERVICE_ACCOUNT_KEY_PATH,
 });
-
 const bucketName = GCP_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
@@ -53,7 +47,6 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
     const originalBlobStream = originalBlob.createWriteStream();
 
     originalBlobStream.on("error", (err) => {
-      console.log(err);
       res.status(500).send(err);
     });
 
@@ -68,7 +61,6 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
       const compressedBlobStream = compressedBlob.createWriteStream();
 
       compressedBlobStream.on("error", (err) => {
-        console.log(err);
         res.status(500).send(err);
       });
 
@@ -85,7 +77,6 @@ router.post("/upload", multerMid.single("file"), async (req, res) => {
 
     originalBlobStream.end(req.file.buffer);
   } catch (error) {
-    console.log(error.message);
     res.status(500).send(error.message);
   }
 });
