@@ -12,11 +12,14 @@ const GCP_BUCKET_NAME = process.env.GCP_BUCKET_NAME;
 
 const router = express.Router();
 
-
 const storage = new Storage({
   projectId: JSON.parse(process.env.GCP_FILE_KEYS).project_id,
-  credentials: JSON.parse(process.env.GCP_FILE_KEYS) // Parse the JSON string into an object
+  credentials: {
+    client_email: JSON.parse(process.env.GCP_FILE_KEYS).client_email,
+    private_key: JSON.parse(process.env.GCP_FILE_KEYS).private_key,
+  },
 });
+
 const bucketName = GCP_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
